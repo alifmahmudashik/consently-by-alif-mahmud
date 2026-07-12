@@ -87,7 +87,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  animation: ocb-fade 0.5s ease;
   width: 750px;
   max-width: 100%;
 }
@@ -225,7 +224,6 @@
   color: var(--ocb-muted);
   font-size: 13px;
   line-height: 24px;
-  animation: ocb-fade 0.5s ease;
 }
 
 .ocb-panel-active {
@@ -532,15 +530,6 @@
 .ocb-mini-icon svg {
   width: 28px;
   height: 28px;
-}
-
-@keyframes ocb-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 @media screen and (max-width: 800px) {

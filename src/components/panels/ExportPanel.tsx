@@ -13,10 +13,13 @@ export function ExportPanel() {
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const snippet = useMemo(
-    () => generateEmbedSnippet(config, { js: `${runtimeBase}/consent-banner.js`, css: `${runtimeBase}/consent-banner.css` }),
-    [config, runtimeBase],
-  );
+  const snippet = useMemo(() => {
+    // The stored config's cookieDbUrl is a same-origin relative path — correct for the builder's
+    // own preview, but it would 404 once this snippet runs on a visitor's own site. Point it at
+    // the same place as the runtime js/css instead, which is where cookie-db.json also gets copied.
+    const exportConfig = { ...config, cookieDbUrl: `${runtimeBase}/cookie-db.json` };
+    return generateEmbedSnippet(exportConfig, { js: `${runtimeBase}/consent-banner.js`, css: `${runtimeBase}/consent-banner.css` });
+  }, [config, runtimeBase]);
 
   async function copySnippet() {
     await navigator.clipboard.writeText(snippet);
@@ -47,7 +50,7 @@ export function ExportPanel() {
         title="Embed snippet"
         description="Paste this before </body> on every page you want the banner to appear on. It loads the (self-hosted) runtime script and initializes it with your configuration."
       >
-        <Field label="Runtime base URL" hint="Where consent-banner.js / consent-banner.css are hosted. Defaults to this app's own /runtime folder — point it elsewhere if you self-host the runtime files.">
+        <Field label="Runtime base URL" hint="Where consent-banner.js / consent-banner.css / cookie-db.json are hosted (all three live in the same dist/runtime folder). Defaults to this app's own /runtime folder — point it elsewhere if you self-host the runtime files.">
           <TextInput value={runtimeBase} onChange={(e) => setRuntimeBase(e.target.value)} />
         </Field>
         <div className="relative">

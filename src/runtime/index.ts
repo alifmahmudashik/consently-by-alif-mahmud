@@ -168,10 +168,22 @@ export class ConsentBannerInstance {
 
       const categoryToggle = target.closest<HTMLElement>('[data-role="category-toggle"]');
       if (categoryToggle) {
-        this.setDraftFromCheckboxes();
+        // Toggle the disclosure directly instead of a full re-render: a full innerHTML replace
+        // would recreate every category row (recreating the whole card, in fact), which loses
+        // scroll position and, since entrance animations restart on newly-created elements,
+        // made the entire banner visibly flash on every click.
         const id = categoryToggle.dataset.category!;
-        this.state.openCategory = this.state.openCategory === id ? null : id;
-        this.render();
+        const willOpen = this.state.openCategory !== id;
+        this.state.openCategory = willOpen ? id : null;
+
+        this.root.querySelectorAll<HTMLElement>('[data-role="category-toggle"]').forEach((toggle) => {
+          const isThisOne = toggle === categoryToggle;
+          const cookiesEl = toggle.closest(".ocb-category")?.querySelector<HTMLElement>(".ocb-category-cookies");
+          const arrow = toggle.querySelector(".ocb-arrow");
+          const open = isThisOne && willOpen;
+          if (cookiesEl) cookiesEl.toggleAttribute("hidden", !open);
+          arrow?.classList.toggle("ocb-arrow-open", open);
+        });
         return;
       }
 
