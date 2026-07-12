@@ -1,0 +1,594 @@
+/* Self-hosted so the banner never depends on a third-party font request (reliability + it's odd for
+   a consent tool to phone home to Google before consent is even given). Poppins stays remote since
+   it's an optional font choice, not the default. */
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-500.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/inter/latin-700.css";
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+.ocb-scope,
+.ocb-scope * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.ocb-scope {
+  font-family: var(--ocb-font);
+  font-size: 13px;
+  line-height: 24px;
+}
+
+.ocb-scope button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ---------- wrap + position variants ---------- */
+
+.ocb-banner-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  pointer-events: none;
+}
+
+.ocb-banner-wrap[hidden] {
+  display: none;
+}
+
+.ocb-banner-wrap.ocb-has-overlay {
+  background: rgba(0, 0, 0, 0.188);
+  pointer-events: auto;
+}
+
+.ocb-wrap-pos-center {
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ocb-wrap-pos-top {
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.ocb-wrap-pos-bottom {
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.ocb-wrap-pos-bottom-left {
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 20px;
+}
+
+.ocb-wrap-pos-bottom-right {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 20px;
+}
+
+/* ---------- the card — one constant design for every position ---------- */
+
+.ocb-card {
+  pointer-events: auto;
+  background: var(--ocb-bg);
+  color: var(--ocb-text);
+  border: 1px solid var(--ocb-border);
+  border-radius: var(--ocb-card-radius);
+  box-shadow:
+    0 1px 2px rgba(15, 15, 20, 0.04),
+    0 16px 40px rgba(15, 15, 20, 0.12);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: ocb-fade 0.5s ease;
+  width: 750px;
+  max-width: 100%;
+}
+
+.ocb-pos-top,
+.ocb-pos-bottom {
+  width: 100%;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.ocb-pos-top {
+  border-top: none;
+}
+
+.ocb-pos-bottom {
+  border-bottom: none;
+}
+
+.ocb-pos-bottom-left,
+.ocb-pos-bottom-right {
+  width: min(420px, 100%);
+}
+
+/* ---------- header ---------- */
+
+.ocb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -5px;
+}
+
+.ocb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ocb-logo {
+  width: var(--ocb-logo-width);
+  max-width: 100%;
+}
+
+.ocb-logo img {
+  width: 100%;
+  display: block;
+}
+
+.ocb-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--ocb-muted);
+  transition: color 0.15s ease;
+}
+
+/* Invisible hit-slop: keeps the tap target accessible without drawing a visible ring. */
+.ocb-icon-btn::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.ocb-icon-btn:hover {
+  color: var(--ocb-accent);
+}
+
+.ocb-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ocb-lang-select {
+  border: 1px solid var(--ocb-border);
+  border-radius: 8px;
+  padding: 4px 6px;
+  font-size: 12px;
+  background: var(--ocb-bg);
+  color: var(--ocb-text);
+}
+
+/* ---------- nav tabs ---------- */
+
+.ocb-nav {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  text-align: center;
+}
+
+.ocb-nav-tab {
+  width: 100%;
+  cursor: pointer;
+  padding: 15px 0;
+  border: none;
+  border-top: 1px solid var(--ocb-border);
+  border-bottom: 1px solid var(--ocb-border);
+  position: relative;
+  background: transparent;
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--ocb-text);
+}
+
+.ocb-nav-tab-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid var(--ocb-accent);
+}
+
+/* ---------- content panels ---------- */
+
+.ocb-content {
+  display: contents;
+}
+
+.ocb-panel {
+  display: none;
+  flex-direction: column;
+  padding: 15px 0;
+  color: var(--ocb-muted);
+  font-size: 13px;
+  line-height: 24px;
+  animation: ocb-fade 0.5s ease;
+}
+
+.ocb-panel-active {
+  display: flex;
+}
+
+.ocb-panel-scroll {
+  gap: 10px;
+  max-height: 30vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.ocb-panel-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+
+.ocb-panel-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--ocb-accent);
+  border-radius: 10px;
+}
+
+/* ---------- categories ---------- */
+
+.ocb-category {
+  border-bottom: 1px solid var(--ocb-border);
+  padding-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ocb-category:last-child {
+  border-bottom: none;
+}
+
+.ocb-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.ocb-category-name {
+  cursor: pointer;
+  width: 80%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-start;
+  background: none;
+  border: none;
+  color: var(--ocb-text);
+  font-size: 14px;
+  line-height: 24px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.ocb-category-desc {
+  color: var(--ocb-muted);
+  font-size: 13px;
+  line-height: 24px;
+}
+
+.ocb-category-cookies {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ocb-category-cookies[hidden] {
+  display: none;
+}
+
+.ocb-badge {
+  background: var(--ocb-accent);
+  margin-left: 5px;
+  color: #fff;
+  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.ocb-arrow {
+  flex-shrink: 0;
+  margin-right: 5px;
+  transition: transform 0.15s ease;
+}
+
+.ocb-arrow-open {
+  transform: rotate(180deg);
+}
+
+/* ---------- providers / cookies ---------- */
+
+.ocb-provider {
+  display: flex;
+  border: 1px solid var(--ocb-border);
+  border-radius: 10px;
+  flex-direction: column;
+  padding: 15px 18px;
+  gap: 5px;
+}
+
+.ocb-provider-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.ocb-provider-name {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.ocb-provider-cookies {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ocb-provider-cookies[hidden] {
+  display: none;
+}
+
+.ocb-learn-more a {
+  color: var(--ocb-accent);
+  font-size: 13px;
+}
+
+.ocb-cookie {
+  padding: 15px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ocb-border) 35%, transparent);
+}
+
+.ocb-cookie-key {
+  font-weight: 600;
+}
+
+.ocb-cookie-border {
+  border-bottom: 1px solid var(--ocb-border);
+  margin: 10px 0;
+}
+
+.ocb-cookie-meta {
+  display: flex;
+  flex-direction: column;
+  color: var(--ocb-muted);
+}
+
+.ocb-no-cookies {
+  background: color-mix(in srgb, var(--ocb-border) 35%, transparent);
+  padding: 15px;
+  border-radius: 10px;
+  color: var(--ocb-muted);
+  font-size: 13px;
+}
+
+/* ---------- toggle switch ---------- */
+
+.ocb-switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.ocb-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ocb-switch-slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.ocb-switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #fff;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.ocb-switch input:checked + .ocb-switch-slider {
+  background-color: var(--ocb-accent);
+}
+
+.ocb-switch input:checked + .ocb-switch-slider::before {
+  transform: translateX(16px);
+}
+
+.ocb-switch-disabled {
+  opacity: 0.5;
+}
+
+/* ---------- buttons ---------- */
+
+.ocb-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  column-gap: 20px;
+  border-top: 1px solid var(--ocb-border);
+  padding-top: 15px;
+}
+
+.ocb-buttons-shadow {
+  box-shadow:
+    rgb(243, 243, 243) 0px -20px 25px 0px,
+    rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+}
+
+.ocb-btn {
+  /* Fixed share of the row (not flex-grow) — matches the original template: hiding the reject
+     button leaves the remaining two at their own width, pushed to the end, not stretched to fill. */
+  flex: 0 1 33.333%;
+  padding: 12px 20px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--ocb-btn-radius);
+  border: 1px solid var(--ocb-border);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ocb-text);
+  background: var(--ocb-bg);
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ocb-btn:hover {
+  background: var(--ocb-accent) !important;
+  border-color: var(--ocb-accent) !important;
+  color: #fff !important;
+}
+
+.ocb-btn-primary {
+  background: var(--ocb-accent) !important;
+  border-color: var(--ocb-accent) !important;
+  color: #fff !important;
+}
+
+.ocb-btn-primary:hover {
+  background: color-mix(in srgb, var(--ocb-accent) 82%, black) !important;
+  border-color: color-mix(in srgb, var(--ocb-accent) 82%, black) !important;
+  color: #fff !important;
+}
+
+/* ---------- mini reopen icon ---------- */
+
+.ocb-mini-icon {
+  position: fixed;
+  bottom: var(--ocb-mini-icon-offset, 20px);
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--ocb-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483000;
+  background: var(--ocb-bg);
+  color: var(--ocb-accent);
+}
+
+.ocb-mini-icon-left {
+  left: var(--ocb-mini-icon-offset, 20px);
+}
+
+.ocb-mini-icon-right {
+  right: var(--ocb-mini-icon-offset, 20px);
+}
+
+.ocb-mini-icon[hidden] {
+  display: none;
+}
+
+.ocb-mini-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+@keyframes ocb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .ocb-card {
+    width: 85%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .ocb-buttons {
+    flex-direction: column-reverse;
+    row-gap: 10px;
+    column-gap: 0;
+  }
+
+  .ocb-buttons .ocb-btn-primary {
+    order: -1;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .ocb-pos-bottom-left,
+  .ocb-pos-bottom-right {
+    width: 100%;
+  }
+
+  .ocb-wrap-pos-bottom-left,
+  .ocb-wrap-pos-bottom-right {
+    padding: 12px;
+  }
+
+  .ocb-switch {
+    transform: scale(0.8);
+  }
+
+  .ocb-nav-tab {
+    font-size: 13px;
+  }
+
+  .ocb-category {
+    gap: 0;
+  }
+
+  .ocb-no-cookies {
+    margin-top: 10px;
+  }
+
+  .ocb-panel-scroll {
+    padding-right: 5px;
+  }
+}
