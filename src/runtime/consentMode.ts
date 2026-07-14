@@ -6,9 +6,11 @@ declare global {
   }
 }
 
-/** Maps our category ids to Google Consent Mode v2 signal names. */
+/** Maps our category ids to Google Consent Mode v2 signal names. security_storage is
+ * deliberately not mapped from any category — per Google's guidance (and the original
+ * hand-coded template), it's always left "granted" regardless of the visitor's choices. */
 const CATEGORY_TO_SIGNALS: Record<string, string[]> = {
-  functional: ["functionality_storage", "security_storage"],
+  functional: ["functionality_storage"],
   preference: ["personalization_storage"],
   analytics: ["analytics_storage"],
   marketing: ["ad_storage", "ad_user_data", "ad_personalization"],

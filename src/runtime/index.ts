@@ -95,16 +95,22 @@ export class ConsentBannerInstance {
       hasStoredChoice: stored !== null,
     };
 
+    // Push the Consent Mode "default" signal immediately, synchronously, before doing anything
+    // else — matching Google's guidance (and the original hand-coded template's onVisit(), which
+    // ran this before any DOM work too) that it must reach the dataLayer as early as possible, so
+    // GTM tags that fire early still see the right default instead of running unconstrained. It
+    // must never wait on the cookie database fetch below — that's for the Details tab's display
+    // only and has nothing to do with the consent signal itself.
+    if (!options.isPreview && config.behavior.googleConsentMode) {
+      pushConsentDefault(this.state.draft);
+    }
+
     this.applyTheme();
     this.attachDelegatedEvents();
     this.render();
 
     this.ready = this.loadCookies().then(() => {
       this.render();
-      if (!options.isPreview) {
-        if (stored) pushConsentDefault(stored.categories);
-        else pushConsentDefault(this.state.draft);
-      }
     });
   }
 
@@ -141,7 +147,7 @@ export class ConsentBannerInstance {
     this.state.draft = { ...categories };
     if (!this.options.isPreview) {
       saveConsent(this.state.config.id, categories, this.state.config.behavior.consentExpiryDays);
-      pushConsentUpdate(categories);
+      if (this.state.config.behavior.googleConsentMode) pushConsentUpdate(categories);
     }
     this.state.hasStoredChoice = true;
     this.state.bannerVisible = false;
