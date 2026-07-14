@@ -1,7 +1,8 @@
 import { init, getInstance, type MountOptions } from "./index";
 import { createDefaultConfig } from "./defaultConfig";
 import type { ConsentBannerConfig } from "./types";
-import "./styles.css";
+// No CSS import here — the banner renders inside a shadow root and carries its own styles with
+// it (see runtime/index.ts), so there's no separate stylesheet for consumers to link anymore.
 
 // Captured synchronously at load time, before any async work — this is the one reliable moment
 // `document.currentScript` points at *this* script tag, wherever it was loaded from.

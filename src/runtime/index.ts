@@ -5,6 +5,9 @@ import { resolveLanguage } from "./i18n";
 import { loadConsent, saveConsent, clearConsent, saveLanguagePreference } from "./consentStorage";
 import { pushConsentDefault, pushConsentUpdate } from "./consentMode";
 import { isLikelyEuropeVisitor } from "./geo";
+// `?inline` gets the compiled CSS back as a plain string instead of a document-level stylesheet,
+// so it can be injected into each instance's own shadow root — see the constructor for why.
+import bannerCss from "./styles.css?inline";
 
 export type { ConsentBannerConfig } from "./types";
 export { createDefaultConfig } from "./defaultConfig";
@@ -38,6 +41,10 @@ function themeStyleText(scopeSelector: string, config: ConsentBannerConfig): str
 
 export class ConsentBannerInstance {
   private container: HTMLElement;
+  /** The light-DOM anchor. Everything else lives inside its shadow root, so a host page's own
+   * CSS (however it's written — tag selectors, `!important`, deep specificity chains) can never
+   * bleed in, and our styles can never bleed out onto the host page either. */
+  private host: HTMLElement;
   private root: HTMLElement;
   private styleEl: HTMLStyleElement;
   private options: MountOptions;
@@ -48,12 +55,20 @@ export class ConsentBannerInstance {
     this.options = options;
     this.container = options.container ?? document.body;
 
-    this.root = document.createElement("div");
-    this.root.className = "ocb-scope";
-    this.container.appendChild(this.root);
+    this.host = document.createElement("div");
+    this.container.appendChild(this.host);
+    const shadow = this.host.attachShadow({ mode: "open" });
+
+    const bannerStyleEl = document.createElement("style");
+    bannerStyleEl.textContent = bannerCss;
+    shadow.appendChild(bannerStyleEl);
 
     this.styleEl = document.createElement("style");
-    document.head.appendChild(this.styleEl);
+    shadow.appendChild(this.styleEl);
+
+    this.root = document.createElement("div");
+    this.root.className = "ocb-scope";
+    shadow.appendChild(this.root);
 
     const language = resolveLanguage(config);
     const stored = options.isPreview ? null : loadConsent(config.id);
@@ -253,8 +268,7 @@ export class ConsentBannerInstance {
   }
 
   destroy() {
-    this.root.remove();
-    this.styleEl.remove();
+    this.host.remove();
   }
 }
 

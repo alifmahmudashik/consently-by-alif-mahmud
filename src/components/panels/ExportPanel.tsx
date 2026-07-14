@@ -18,7 +18,7 @@ export function ExportPanel() {
     // runtime resolves that against wherever consent-banner.js itself was actually loaded from
     // at load time, so the snippet keeps working even if the runtime later moves to another
     // domain, without needing to bake a fixed URL in ahead of time (see runtime/embed.ts).
-    () => generateEmbedSnippet(config, { js: `${runtimeBase}/consent-banner.js`, css: `${runtimeBase}/consent-banner.css` }),
+    () => generateEmbedSnippet(config, { js: `${runtimeBase}/consent-banner.js` }),
     [config, runtimeBase],
   );
 
@@ -49,9 +49,9 @@ export function ExportPanel() {
     <div>
       <Section
         title="Embed snippet"
-        description="Paste this before </body> on every page you want the banner to appear on. It loads the (self-hosted) runtime script and initializes it with your configuration."
+        description="Paste this before </body> on every page you want the banner to appear on. It loads the (self-hosted) runtime script and initializes it with your configuration. The banner renders inside a shadow root, so it can't inherit — or leak — CSS from the rest of the page."
       >
-        <Field label="Runtime base URL" hint="Where consent-banner.js / consent-banner.css are hosted — cookie-db.json (also in dist/runtime/) is found automatically from that same location, so this keeps working even if you move to a different domain later. Defaults to this app's own /runtime folder — point it elsewhere if you self-host the runtime files.">
+        <Field label="Runtime base URL" hint="Where consent-banner.js is hosted — cookie-db.json (also in dist/runtime/) is found automatically from that same location, so this keeps working even if you move to a different domain later. Defaults to this app's own /runtime folder — point it elsewhere if you self-host the runtime files.">
           <TextInput value={runtimeBase} onChange={(e) => setRuntimeBase(e.target.value)} />
         </Field>
         <div className="relative">

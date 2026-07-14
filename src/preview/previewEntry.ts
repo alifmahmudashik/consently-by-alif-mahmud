@@ -1,5 +1,4 @@
 import { ConsentBannerInstance } from "../runtime";
-import "../runtime/styles.css";
 import { isPreviewMessage, PREVIEW_MESSAGE_SOURCE } from "./protocol";
 
 const root = document.getElementById("ocb-preview-root")!;

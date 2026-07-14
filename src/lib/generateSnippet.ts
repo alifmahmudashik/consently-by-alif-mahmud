@@ -2,14 +2,12 @@ import type { ConsentBannerConfig } from "../runtime/types";
 
 export interface RuntimeUrls {
   js: string;
-  css: string;
 }
 
 export function generateEmbedSnippet(config: ConsentBannerConfig, runtime: RuntimeUrls): string {
   const configJson = JSON.stringify(config, null, 2);
 
   return `<!-- Consently -->
-<link rel="stylesheet" href="${runtime.css}" />
 <script src="${runtime.js}"></script>
 <script>
   window.addEventListener("DOMContentLoaded", function () {

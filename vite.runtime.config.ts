@@ -24,16 +24,17 @@ export default defineConfig({
   build: {
     outDir: "dist/runtime",
     emptyOutDir: false,
-    cssCodeSplit: false,
-    // Inline the self-hosted font files (and anything else CSS references) as data URIs so the
-    // runtime stays a self-contained js+css pair with no sibling asset files to remember to deploy.
+    // Styles are injected as a string into each instance's shadow root (see runtime/index.ts's
+    // `?inline` CSS import) rather than emitted as a separate stylesheet, so there's no
+    // consent-banner.css anymore — just this one self-contained JS file.
+    // Inline the self-hosted font files (and anything else CSS references) as data URIs so that
+    // one file has no sibling assets to remember to deploy.
     assetsInlineLimit: Infinity,
     lib: {
       entry: resolve(process.cwd(), "src/runtime/embed.ts"),
       name: "ConsentBannerLib",
       formats: ["iife"],
       fileName: () => "consent-banner.js",
-      cssFileName: "consent-banner",
     },
   },
 });
