@@ -1,0 +1,11 @@
+# Cloudflare Pages custom response headers.
+# consent-banner.js is what actually runs on every embedder's site, and it changes whenever a fix
+# ships — a long cache means visitors keep running a stale (possibly broken) copy for hours after
+# a fix is live. `no-cache` still lets browsers/CDN cache it and revalidate via ETag (a cheap 304
+# on every request when unchanged), it just stops them from serving a stale copy unconditionally.
+/runtime/consent-banner.js
+  Cache-Control: no-cache, must-revalidate
+
+# cookie-db.json is large and rarely changes, so a modest cache is fine here.
+/runtime/cookie-db.json
+  Cache-Control: public, max-age=3600, must-revalidate
