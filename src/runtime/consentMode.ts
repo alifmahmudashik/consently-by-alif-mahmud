@@ -3,6 +3,7 @@ import type { ConsentState } from "./types";
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -20,6 +21,14 @@ const CATEGORY_TO_SIGNALS: Record<string, string[]> = {
 function gtag(...args: unknown[]) {
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push(args);
+}
+
+/** Google's documented snippet defines gtag as a plain global (`function gtag(){...}`), and other
+ * scripts on the page (WooCommerce, other plugins/tags) may call a global `gtag(...)` expecting
+ * one to exist. Expose ours the same way — but only if nothing's already defined one, since a
+ * real gtag.js load (first or later) does the exact same "push args to dataLayer" thing anyway. */
+if (typeof window !== "undefined") {
+  window.gtag = window.gtag || gtag;
 }
 
 function buildSignals(categories: ConsentState): Record<string, "granted" | "denied"> {
