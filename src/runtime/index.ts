@@ -40,35 +40,20 @@ function themeStyleText(scopeSelector: string, config: ConsentBannerConfig): str
 }
 
 export class ConsentBannerInstance {
-  private container: HTMLElement;
+  private container!: HTMLElement;
   /** The light-DOM anchor. Everything else lives inside its shadow root, so a host page's own
    * CSS (however it's written — tag selectors, `!important`, deep specificity chains) can never
-   * bleed in, and our styles can never bleed out onto the host page either. */
-  private host: HTMLElement;
-  private root: HTMLElement;
-  private styleEl: HTMLStyleElement;
+   * bleed in, and our styles can never bleed out onto the host page either. Undefined until
+   * mount() actually runs — see there for why that isn't necessarily immediate. */
+  private host?: HTMLElement;
+  private root?: HTMLElement;
+  private styleEl?: HTMLStyleElement;
   private options: MountOptions;
   private state: RenderState;
   private ready: Promise<void>;
 
   constructor(config: ConsentBannerConfig, options: MountOptions = {}) {
     this.options = options;
-    this.container = options.container ?? document.body;
-
-    this.host = document.createElement("div");
-    this.container.appendChild(this.host);
-    const shadow = this.host.attachShadow({ mode: "open" });
-
-    const bannerStyleEl = document.createElement("style");
-    bannerStyleEl.textContent = bannerCss;
-    shadow.appendChild(bannerStyleEl);
-
-    this.styleEl = document.createElement("style");
-    shadow.appendChild(this.styleEl);
-
-    this.root = document.createElement("div");
-    this.root.className = "ocb-scope";
-    shadow.appendChild(this.root);
 
     const language = resolveLanguage(config);
     const stored = options.isPreview ? null : loadConsent(config.id);
@@ -96,21 +81,53 @@ export class ConsentBannerInstance {
     };
 
     // Push the Consent Mode "default" signal immediately, synchronously, before doing anything
-    // else — matching Google's guidance (and the original hand-coded template's onVisit(), which
-    // ran this before any DOM work too) that it must reach the dataLayer as early as possible, so
-    // GTM tags that fire early still see the right default instead of running unconstrained. It
-    // must never wait on the cookie database fetch below — that's for the Details tab's display
-    // only and has nothing to do with the consent signal itself.
+    // else, with zero DOM dependency — matching Google's guidance (and the original hand-coded
+    // template's onVisit(), which ran this before any DOM work too) that it must reach the
+    // dataLayer as early as possible, so GTM tags that fire early still see the right default
+    // instead of running unconstrained. It must never wait on the DOM being ready or on the
+    // cookie database fetch below — that's for the Details tab's display only.
     if (!options.isPreview && config.behavior.googleConsentMode) {
       pushConsentDefault(this.state.draft);
     }
 
-    this.applyTheme();
-    this.attachDelegatedEvents();
-    this.render();
+    this.ready = this.mount()
+      .then(() => this.loadCookies())
+      .then(() => this.render());
+  }
 
-    this.ready = this.loadCookies().then(() => {
-      this.render();
+  /** Mounting needs an actual place to attach to — document.body if nothing else was given.
+   * The snippet is meant to go right before </body>, where that already exists, so this
+   * normally runs synchronously with no delay at all. But scripts do sometimes end up in <head>
+   * (a surprising number of "insert custom code" site/plugin fields default to it) where
+   * document.body is still null, so this waits for it rather than crashing on a null container. */
+  private mount(): Promise<void> {
+    return new Promise((resolve) => {
+      const attach = () => {
+        this.container = this.options.container ?? document.body;
+
+        this.host = document.createElement("div");
+        this.container.appendChild(this.host);
+        const shadow = this.host.attachShadow({ mode: "open" });
+
+        const bannerStyleEl = document.createElement("style");
+        bannerStyleEl.textContent = bannerCss;
+        shadow.appendChild(bannerStyleEl);
+
+        this.styleEl = document.createElement("style");
+        shadow.appendChild(this.styleEl);
+
+        this.root = document.createElement("div");
+        this.root.className = "ocb-scope";
+        shadow.appendChild(this.root);
+
+        this.applyTheme();
+        this.attachDelegatedEvents();
+        this.render();
+        resolve();
+      };
+
+      if (this.options.container || document.body) attach();
+      else document.addEventListener("DOMContentLoaded", attach, { once: true });
     });
   }
 
@@ -120,15 +137,20 @@ export class ConsentBannerInstance {
   }
 
   private applyTheme() {
+    // Guarded because updateConfig() (called from the builder preview) can run before mount()
+    // has attached anything, if this instance is still waiting on document.body to exist.
+    if (!this.styleEl) return;
     this.styleEl.textContent = themeStyleText(".ocb-scope", this.state.config);
   }
 
   private render() {
+    if (!this.root) return;
     this.root.innerHTML = renderMarkup(this.state);
   }
 
   private setDraftFromCheckboxes() {
-    const boxes = this.root.querySelectorAll<HTMLInputElement>('[data-role="category-checkbox"]');
+    // Only ever called from listeners attached in mount(), so root is guaranteed to exist here.
+    const boxes = this.root!.querySelectorAll<HTMLInputElement>('[data-role="category-checkbox"]');
     boxes.forEach((box) => {
       const id = box.dataset.category!;
       this.state.draft[id] = box.checked;
@@ -155,7 +177,8 @@ export class ConsentBannerInstance {
   }
 
   private attachDelegatedEvents() {
-    this.root.addEventListener("click", (event) => {
+    // Only ever called from attach() right after root is created, so it's guaranteed to exist.
+    this.root!.addEventListener("click", (event) => {
       const target = event.target as HTMLElement;
 
       const actionEl = target.closest<HTMLElement>("[data-action]");
@@ -197,7 +220,7 @@ export class ConsentBannerInstance {
         const willOpen = this.state.openCategory !== id;
         this.state.openCategory = willOpen ? id : null;
 
-        this.root.querySelectorAll<HTMLElement>('[data-role="category-toggle"]').forEach((toggle) => {
+        this.root!.querySelectorAll<HTMLElement>('[data-role="category-toggle"]').forEach((toggle) => {
           const isThisOne = toggle === categoryToggle;
           const cookiesEl = toggle.closest(".ocb-category")?.querySelector<HTMLElement>(".ocb-category-cookies");
           const arrow = toggle.querySelector(".ocb-arrow");
@@ -222,7 +245,7 @@ export class ConsentBannerInstance {
       }
     });
 
-    this.root.addEventListener("change", (event) => {
+    this.root!.addEventListener("change", (event) => {
       const target = event.target as HTMLElement;
       if (target.matches('[data-role="category-checkbox"]')) {
         this.setDraftFromCheckboxes();
@@ -274,7 +297,7 @@ export class ConsentBannerInstance {
   }
 
   destroy() {
-    this.host.remove();
+    this.host?.remove();
   }
 }
 
